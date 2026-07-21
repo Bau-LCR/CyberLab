@@ -287,7 +287,7 @@ function initAurora(canvas) {
   let w = 0, h = 0, dpr = 1, stars = [];
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
-    w = canvas.clientWidth; h = canvas.clientHeight;
+    w = window.innerWidth; h = window.innerHeight;
     canvas.width = Math.max(1, w * dpr);
     canvas.height = Math.max(1, h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
