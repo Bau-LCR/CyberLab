@@ -13,6 +13,19 @@
 </head>
 <body>
 
+<!-- ============ BIOS / UEFI ============ -->
+<section id="bios-screen" class="screen bios-screen hidden">
+  <div class="bios-post" id="bios-post">
+    <pre id="bios-post-text"></pre>
+    <div class="bios-hint">Presioná SUPR para entrar a la configuración — cualquier otra tecla para continuar</div>
+  </div>
+  <div class="bios-setup hidden" id="bios-setup">
+    <div class="bios-setup-title">WebOS UEFI/BIOS Setup Utility</div>
+    <div class="bios-setup-rows" id="bios-setup-rows"></div>
+    <div class="bios-setup-footer">↑↓ Navegar &nbsp; Enter Cambiar &nbsp; F10 / ESC Guardar y arrancar</div>
+  </div>
+</section>
+
 <!-- ============ BOOT SCREEN ============ -->
 <section id="boot-screen" class="screen">
   <canvas id="boot-canvas"></canvas>
@@ -43,14 +56,17 @@
 <section id="login-screen" class="screen hidden">
   <canvas id="login-canvas"></canvas>
   <div class="login-content">
-    <div class="login-users" id="login-users"></div>
-    <form class="login-form hidden" id="login-form" autocomplete="off">
-      <div class="login-avatar" id="login-avatar">🙂</div>
-      <div class="login-name" id="login-name">Usuario</div>
-      <input type="password" id="login-password" class="login-input" placeholder="Contraseña (cualquiera)" />
-      <button type="submit" class="login-submit">Iniciar sesión →</button>
-      <button type="button" class="login-back" id="login-back">← Cambiar de usuario</button>
-      <p class="login-note">Demo educativa: cualquier contraseña es válida. No hay autenticación real.</p>
+    <div class="login-avatar" id="login-avatar">🙂</div>
+    <h2 class="login-heading" id="login-heading">Iniciar sesión</h2>
+    <form class="login-form" id="login-form" autocomplete="off">
+      <input type="text" id="login-name" class="login-input hidden" placeholder="Tu nombre" />
+      <input type="email" id="login-email" class="login-input" placeholder="Correo electrónico" required />
+      <input type="password" id="login-password" class="login-input" placeholder="Contraseña" required minlength="6" />
+      <div class="login-error hidden" id="login-error"></div>
+      <button type="submit" class="login-submit" id="login-submit-btn">Iniciar sesión →</button>
+      <button type="button" class="login-toggle" id="login-toggle">¿No tenés cuenta? Creá una</button>
+      <button type="button" class="login-guest" id="login-guest">Continuar como invitado</button>
+      <p class="login-note" id="login-fb-note">Conectando con Firebase…</p>
     </form>
   </div>
   <div class="login-power" id="login-power">
@@ -67,7 +83,6 @@
 <!-- ============ DESKTOP ============ -->
 <section id="desktop" class="screen hidden">
   <canvas id="bg-canvas"></canvas>
-  <div class="wallpaper-overlay" id="wallpaper-overlay"></div>
   <div class="dim-overlay" id="dim-overlay"></div>
 
   <div id="desktop-icons" class="desktop-icons"></div>
@@ -158,6 +173,15 @@
   </footer>
 </section>
 
+<!-- Diálogo modal genérico (usado en vez de window.prompt, que los navegadores
+     pueden bloquear al previsualizar el sitio dentro de un iframe) -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<script type="module" src="firebase-auth.js"></script>
 <script src="script.js"></script>
+</body>
+</html>
 </body>
 </html>
