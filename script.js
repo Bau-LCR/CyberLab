@@ -16,14 +16,12 @@ const ICONS = {
   store: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l1 12.5a1.5 1.5 0 0 1-1.5 1.5H6.5A1.5 1.5 0 0 1 5 20.5L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>`,
   settings: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M17 6h3M4 12h3M9 12h11M4 18h13M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="7" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>`,
   puzzle: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3.5h4a1.5 1.5 0 0 1 1.5 1.5v2.3a1.7 1.7 0 0 0 2.9 1.2 1.7 1.7 0 0 1 2.9 1.2V13a1.5 1.5 0 0 1-1.5 1.5h-2.3a1.7 1.7 0 0 0-1.2 2.9 1.7 1.7 0 0 1-1.2 2.9H11A1.5 1.5 0 0 1 9.5 19v-2.3a1.7 1.7 0 0 0-2.9-1.2A1.7 1.7 0 0 1 3.5 14.3V11A1.5 1.5 0 0 1 5 9.5h2.3A1.7 1.7 0 0 0 8.5 6.6 1.7 1.7 0 0 1 9 3.5Z"/></svg>`,
+  weather: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17.5a4 4 0 0 1 .3-8 5.5 5.5 0 0 1 10.6 1.7A3.7 3.7 0 0 1 17 18H7Z"/><path d="M9.5 4V2.5M14.5 4.6l1-1.3M5.5 6.6l-1.2-1"/></svg>`,
+  game: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8" width="19" height="10" rx="4"/><path d="M7 11v4M5 13h4"/><circle cx="16" cy="11.5" r="1"/><circle cx="18.5" cy="14" r="1"/></svg>`,
+  picture: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5.5-5.5L9 17"/></svg>`,
 };
 
 /* ================= DATOS ESTÁTICOS ================= */
-const USERS = [
-  { id: 'usuario', name: 'Usuario', avatar: '🙂' },
-  { id: 'admin', name: 'Administrador', avatar: '🛠️' },
-];
-
 const WALLPAPERS = [
   { id: 'aurora-1', label: 'Aurora nocturna', css: 'linear-gradient(135deg,#1b1245,#05060f 60%)' },
   { id: 'aurora-2', label: 'Nébula violeta', css: 'linear-gradient(135deg,#3a1c6e,#06040f 60%)' },
@@ -31,7 +29,31 @@ const WALLPAPERS = [
   { id: 'solid-1', label: 'Grafito', css: '#14161f' },
 ];
 
-const STORE_APPS = ['code-editor', 'media-player', 'sticky-notes'];
+const STORE_APPS = ['code-editor', 'media-player', 'sticky-notes', 'weather', 'snake-game', 'image-viewer'];
+
+const WMO_CODES = {
+  0: ['☀️', 'Despejado'], 1: ['🌤️', 'Mayormente despejado'], 2: ['⛅', 'Parcialmente nublado'], 3: ['☁️', 'Nublado'],
+  45: ['🌫️', 'Niebla'], 48: ['🌫️', 'Niebla con escarcha'],
+  51: ['🌦️', 'Llovizna ligera'], 53: ['🌦️', 'Llovizna'], 55: ['🌧️', 'Llovizna intensa'],
+  61: ['🌦️', 'Lluvia ligera'], 63: ['🌧️', 'Lluvia'], 65: ['🌧️', 'Lluvia intensa'],
+  71: ['🌨️', 'Nieve ligera'], 73: ['🌨️', 'Nieve'], 75: ['❄️', 'Nieve intensa'],
+  80: ['🌦️', 'Chubascos'], 81: ['🌧️', 'Chubascos intensos'], 82: ['⛈️', 'Chubascos violentos'],
+  95: ['⛈️', 'Tormenta'], 96: ['⛈️', 'Tormenta con granizo'], 99: ['⛈️', 'Tormenta severa'],
+};
+function wmoInfo(code) { return WMO_CODES[code] || ['🌡️', 'Condición desconocida']; }
+
+const BIOS_POST_LINES = [
+  'WebOS UEFI BIOS v2.4.1',
+  'Copyright (C) WebOS Technologies',
+  '',
+  'CPU: Núcleo Cuántico Simulado @ 4.20GHz',
+  'Verificando memoria... 16384MB OK',
+  'Detectando unidad primaria... WebOS Virtual Drive (OK)',
+  'Detectando unidad secundaria... no se encontró ninguna',
+  'Inicializando controladora de red simulada... OK',
+  '',
+  'Presioná SUPR para entrar a la configuración',
+];
 
 const FE_SHORTCUTS = [
   { label: 'Inicio', path: '/home/usuario', icon: '🏠' },
@@ -287,6 +309,9 @@ function initAurora(canvas) {
   let w = 0, h = 0, dpr = 1, stars = [];
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Usamos el tamaño de la ventana (no canvas.clientWidth/Height): las 4 pantallas
+    // ocupan siempre todo el viewport, y varias empiezan ocultas (display:none), lo
+    // que dejaría al canvas "congelado" en 0x0 si midiéramos el propio elemento.
     w = window.innerWidth; h = window.innerHeight;
     canvas.width = Math.max(1, w * dpr);
     canvas.height = Math.max(1, h * dpr);
@@ -423,6 +448,7 @@ function closeWindow(id) {
   const win = state.windows.find((w) => w.id === id);
   if (!win) return;
   if (win.data && win.data.mediaInterval) clearInterval(win.data.mediaInterval);
+  if (win.data && win.data.snakeInterval) clearInterval(win.data.snakeInterval);
   win.el.remove();
   state.windows = state.windows.filter((w) => w.id !== id);
   if (state.activeWindowId === id) state.activeWindowId = null;
@@ -568,7 +594,7 @@ function cycleWindows() {
 }
 
 /* ================= ESCRITORIO, BARRA DE TAREAS Y MENÚS ================= */
-const DESKTOP_ORDER = ['file-explorer', 'notepad', 'calculator', 'terminal', 'calendar', 'monitor', 'store', 'settings', 'code-editor', 'media-player', 'sticky-notes'];
+const DESKTOP_ORDER = ['file-explorer', 'notepad', 'calculator', 'terminal', 'calendar', 'monitor', 'store', 'settings', 'code-editor', 'media-player', 'sticky-notes', 'weather', 'snake-game', 'image-viewer'];
 
 function renderDesktopIcons() {
   const box = document.getElementById('desktop-icons');
@@ -689,9 +715,66 @@ function setAccent(accent) { state.accent = accent; document.documentElement.set
 function setWallpaper(id) { state.wallpaper = id; document.documentElement.setAttribute('data-wallpaper', id); }
 
 function showScreen(id) {
-  ['boot-screen', 'lock-screen', 'login-screen', 'desktop', 'shutdown-screen'].forEach((s) => {
+  ['bios-screen', 'boot-screen', 'lock-screen', 'login-screen', 'desktop', 'shutdown-screen'].forEach((s) => {
     document.getElementById(s).classList.toggle('hidden', s !== id);
   });
+}
+
+/* ================= BIOS / UEFI ================= */
+const biosSettings = [
+  { id: 'turbo', label: 'Modo Turbo', value: true },
+  { id: 'rgb', label: 'Iluminación RGB del gabinete', value: true },
+  { id: 'fastboot', label: 'Arranque rápido', value: false },
+  { id: 'bootOrder', label: 'Orden de arranque', value: 'WebOS Virtual Drive', readonly: true },
+];
+let biosSelectedRow = 0;
+let biosSkip = false;
+let biosEnterSetupRequested = false;
+function runBios() {
+  showScreen('bios-screen');
+  document.getElementById('bios-setup').classList.add('hidden');
+  document.getElementById('bios-post').classList.remove('hidden');
+  const pre = document.getElementById('bios-post-text');
+  pre.textContent = '';
+  biosSkip = false;
+  biosEnterSetupRequested = false;
+  let li = 0;
+  function typeLine() {
+    if (biosSkip) { pre.textContent = BIOS_POST_LINES.join('\n'); finishBiosPost(); return; }
+    if (li >= BIOS_POST_LINES.length) { setTimeout(finishBiosPost, 500); return; }
+    pre.textContent += BIOS_POST_LINES[li] + '\n';
+    li++;
+    setTimeout(typeLine, 130);
+  }
+  typeLine();
+}
+function finishBiosPost() {
+  if (biosEnterSetupRequested) openBiosSetup();
+  else runBoot();
+}
+function openBiosSetup() {
+  document.getElementById('bios-post').classList.add('hidden');
+  document.getElementById('bios-setup').classList.remove('hidden');
+  biosSelectedRow = 0;
+  renderBiosSetup();
+}
+function renderBiosSetup() {
+  const rows = document.getElementById('bios-setup-rows');
+  rows.innerHTML = biosSettings.map((s, i) => {
+    const val = typeof s.value === 'boolean' ? (s.value ? 'Activado' : 'Desactivado') : s.value;
+    return `<div class="bios-row ${i === biosSelectedRow ? 'sel' : ''}"><span>${escapeHtml(s.label)}</span><span>${escapeHtml(String(val))}</span></div>`;
+  }).join('');
+}
+function handleBiosSetupKey(e) {
+  e.preventDefault();
+  if (e.key === 'ArrowDown') { biosSelectedRow = (biosSelectedRow + 1) % biosSettings.length; renderBiosSetup(); }
+  else if (e.key === 'ArrowUp') { biosSelectedRow = (biosSelectedRow - 1 + biosSettings.length) % biosSettings.length; renderBiosSetup(); }
+  else if (e.key === 'Enter') {
+    const s = biosSettings[biosSelectedRow];
+    if (typeof s.value === 'boolean' && !s.readonly) { s.value = !s.value; renderBiosSetup(); }
+  } else if (e.key === 'F10' || e.key === 'Escape') {
+    runBoot();
+  }
 }
 function runBoot() {
   showScreen('boot-screen');
@@ -709,29 +792,58 @@ function runBoot() {
   }
   step();
 }
-function goToLogin() { showScreen('login-screen'); renderLoginUsers(); }
-function renderLoginUsers() {
-  const box = document.getElementById('login-users');
-  document.getElementById('login-form').classList.add('hidden');
-  box.classList.remove('hidden');
-  box.innerHTML = '';
-  USERS.forEach((u) => {
-    const b = document.createElement('button');
-    b.className = 'login-user-tile';
-    b.innerHTML = `<span class="avatar">${u.avatar}</span><span>${escapeHtml(u.name)}</span>`;
-    b.addEventListener('click', () => selectLoginUser(u));
-    box.appendChild(b);
-  });
-}
-function selectLoginUser(u) {
-  document.getElementById('login-users').classList.add('hidden');
-  const form = document.getElementById('login-form');
-  form.classList.remove('hidden');
-  document.getElementById('login-avatar').textContent = u.avatar;
-  document.getElementById('login-name').textContent = u.name;
+let loginMode = 'login'; // 'login' | 'register'
+function goToLogin() {
+  showScreen('login-screen');
+  setLoginMode('login');
+  document.getElementById('login-email').value = '';
   document.getElementById('login-password').value = '';
-  form.dataset.userId = u.id;
-  document.getElementById('login-password').focus();
+  updateFirebaseNote();
+}
+function setLoginMode(mode) {
+  loginMode = mode;
+  const nameInput = document.getElementById('login-name');
+  const heading = document.getElementById('login-heading');
+  const submitBtn = document.getElementById('login-submit-btn');
+  const toggle = document.getElementById('login-toggle');
+  if (mode === 'register') {
+    nameInput.classList.remove('hidden');
+    heading.textContent = 'Crear cuenta';
+    submitBtn.textContent = 'Crear cuenta →';
+    toggle.textContent = '¿Ya tenés cuenta? Iniciá sesión';
+  } else {
+    nameInput.classList.add('hidden');
+    heading.textContent = 'Iniciar sesión';
+    submitBtn.textContent = 'Iniciar sesión →';
+    toggle.textContent = '¿No tenés cuenta? Creá una';
+  }
+  showLoginError('');
+}
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.classList.toggle('hidden', !msg);
+}
+function updateFirebaseNote() {
+  const note = document.getElementById('login-fb-note');
+  if (window.WebOSFirebase && window.WebOSFirebase.isConfigured) {
+    note.textContent = 'Tu cuenta se guarda de forma segura con Firebase Authentication.';
+  } else {
+    note.textContent = 'Firebase no está configurado todavía: usá "Continuar como invitado" o completá firebase-config.js.';
+  }
+}
+function traduceErrorFirebase(err) {
+  const code = err && err.code;
+  const map = {
+    'auth/email-already-in-use': 'Ese correo ya tiene una cuenta. Iniciá sesión en vez de crear una nueva.',
+    'auth/invalid-email': 'El correo no es válido.',
+    'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
+    'auth/user-not-found': 'No existe ninguna cuenta con ese correo.',
+    'auth/wrong-password': 'La contraseña es incorrecta.',
+    'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+    'auth/too-many-requests': 'Demasiados intentos. Probá de nuevo en unos minutos.',
+  };
+  return map[code] || (err && err.message) || 'Ocurrió un error inesperado.';
 }
 function logIn(user) {
   state.currentUser = user;
@@ -753,8 +865,12 @@ function goToShutdown() {
 function handlePower(action) {
   closeStartMenu();
   if (action === 'lock') showScreen('lock-screen');
-  else if (action === 'logout') { state.currentUser = null; goToLogin(); }
-  else if (action === 'restart') runBoot();
+  else if (action === 'logout') {
+    state.currentUser = null;
+    if (window.WebOSFirebase) window.WebOSFirebase.logoutUser();
+    goToLogin();
+  }
+  else if (action === 'restart') runBios();
   else if (action === 'shutdown') goToShutdown();
 }
 
@@ -904,13 +1020,14 @@ function renderFileExplorer(container, win, opts) {
     });
     div.addEventListener('dblclick', () => {
       if (it.node.type === 'folder') { win.data.path = it.path; renderFileExplorer(container, win); }
+      else if (/\.(png|jpg|jpeg|gif|svg)$/i.test(it.name)) openApp('image-viewer', { src: it.node.content, fileName: it.name });
       else openApp('notepad', { path: it.path });
     });
     div.addEventListener('contextmenu', (e) => {
       e.preventDefault(); e.stopPropagation();
       const inTrash = win.data.path === '/recycle-bin';
       showContextMenu(e.pageX, e.pageY, [
-        { label: 'Abrir', action: () => { if (it.node.type === 'folder') { win.data.path = it.path; renderFileExplorer(container, win); } else openApp('notepad', { path: it.path }); } },
+        { label: 'Abrir', action: () => { if (it.node.type === 'folder') { win.data.path = it.path; renderFileExplorer(container, win); } else if (/\.(png|jpg|jpeg|gif|svg)$/i.test(it.name)) openApp('image-viewer', { src: it.node.content, fileName: it.name }); else openApp('notepad', { path: it.path }); } },
         { label: 'Renombrar', action: () => askInput('Nuevo nombre', it.name, (n) => { if (renameNode(it.path, n)) renderFileExplorer(container, win); }) },
         { sep: true },
         { label: inTrash ? 'Eliminar definitivamente' : 'Eliminar', danger: true, action: () => { deleteNode(it.path, inTrash); renderFileExplorer(container, win); notify('Explorador de archivos', `"${it.name}" eliminado`); } },
@@ -1443,6 +1560,196 @@ function renderStickyNotes(container, win) {
   container.querySelector('textarea').addEventListener('input', (e) => { win.data.content = e.target.value; });
 }
 
+/* ================= APP: CLIMA (API real, sin clave) ================= */
+async function fetchWeatherByCity(city) {
+  const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=es&format=json`);
+  const geo = await geoRes.json();
+  if (!geo.results || !geo.results.length) throw new Error('No se encontró esa ciudad');
+  const { latitude, longitude, name, country } = geo.results[0];
+  const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`);
+  const w = await wRes.json();
+  return { name, country, current: w.current, daily: w.daily };
+}
+function renderWeather(container, win) {
+  if (win.data.city === undefined) win.data.city = 'Buenos Aires';
+  if (win.data.result === undefined) win.data.result = null;
+  win.data.loading = false;
+  win.data.error = '';
+  function draw() {
+    container.innerHTML = `
+      <div class="wx-wrap">
+        <div class="app-toolbar">
+          <input type="text" class="wx-input" id="wx-city-${win.id}" placeholder="Buscar ciudad…" value="${escapeHtml(win.data.city)}" />
+          <button data-act="wx-search" class="primary">Buscar</button>
+        </div>
+        <div class="wx-body" id="wx-body-${win.id}"></div>
+      </div>`;
+    const body = container.querySelector(`#wx-body-${win.id}`);
+    if (win.data.loading) body.innerHTML = `<div class="app-empty">🌐<br/>Consultando el clima…</div>`;
+    else if (win.data.error) body.innerHTML = `<div class="app-empty">⚠️<br/>${escapeHtml(win.data.error)}</div>`;
+    else if (win.data.result) drawResult(body);
+    container.querySelector('[data-act="wx-search"]').addEventListener('click', doSearch);
+    container.querySelector(`#wx-city-${win.id}`).addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+  }
+  function drawResult(body) {
+    const r = win.data.result;
+    const [icon, desc] = wmoInfo(r.current.weather_code);
+    body.innerHTML = `
+      <div class="wx-current">
+        <div class="wx-icon">${icon}</div>
+        <div class="wx-temp">${Math.round(r.current.temperature_2m)}°C</div>
+        <div class="wx-desc">${escapeHtml(desc)}</div>
+        <div class="wx-place">${escapeHtml(r.name)}, ${escapeHtml(r.country)}</div>
+        <div class="wx-sub">Humedad ${r.current.relative_humidity_2m}% · Viento ${Math.round(r.current.wind_speed_10m)} km/h</div>
+      </div>
+      <div class="wx-days">${r.daily.time.slice(0, 5).map((d, i) => {
+        const [ic] = wmoInfo(r.daily.weather_code[i]);
+        const day = new Date(d).toLocaleDateString('es-ES', { weekday: 'short' });
+        return `<div class="wx-day"><div>${day}</div><div>${ic}</div><div>${Math.round(r.daily.temperature_2m_max[i])}°/${Math.round(r.daily.temperature_2m_min[i])}°</div></div>`;
+      }).join('')}</div>`;
+  }
+  async function doSearch() {
+    const input = container.querySelector(`#wx-city-${win.id}`);
+    const city = input.value.trim();
+    if (!city) return;
+    win.data.city = city; win.data.loading = true; win.data.error = ''; win.data.result = null;
+    draw();
+    try {
+      win.data.result = await fetchWeatherByCity(city);
+      win.data.loading = false;
+      draw();
+    } catch (err) {
+      win.data.loading = false;
+      win.data.error = 'No se pudo obtener el clima. Verificá el nombre de la ciudad o tu conexión.';
+      draw();
+    }
+  }
+  draw();
+  if (!win.data.result) doSearch();
+}
+
+/* ================= APP: SNAKE ================= */
+function renderSnakeGame(container, win) {
+  container.innerHTML = `
+    <div class="snake-wrap">
+      <div class="snake-hud"><span>Puntaje: <b id="snake-score-${win.id}">0</b></span><button data-act="restart">Reiniciar</button></div>
+      <canvas id="snake-canvas-${win.id}" width="360" height="360"></canvas>
+      <div class="snake-hint">Hacé clic en el juego y usá las flechas del teclado.</div>
+    </div>`;
+  const canvas = container.querySelector(`#snake-canvas-${win.id}`);
+  const ctx = canvas.getContext('2d');
+  const cell = 18, cols = canvas.width / cell, rows = canvas.height / cell;
+  let snake, dir, nextDir, food, score, alive;
+  function reset() {
+    snake = [{ x: 8, y: 8 }, { x: 7, y: 8 }, { x: 6, y: 8 }];
+    dir = { x: 1, y: 0 }; nextDir = { x: 1, y: 0 };
+    score = 0; alive = true;
+    placeFood();
+    container.querySelector(`#snake-score-${win.id}`).textContent = '0';
+  }
+  function placeFood() {
+    do { food = { x: Math.floor(Math.random() * cols), y: Math.floor(Math.random() * rows) }; }
+    while (snake.some((s) => s.x === food.x && s.y === food.y));
+  }
+  function tick() {
+    if (!alive) return;
+    dir = nextDir;
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+    if (head.x < 0 || head.y < 0 || head.x >= cols || head.y >= rows || snake.some((s) => s.x === head.x && s.y === head.y)) {
+      alive = false; draw(); notify('Snake', `Juego terminado — puntaje ${score}`); return;
+    }
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) {
+      score++;
+      container.querySelector(`#snake-score-${win.id}`).textContent = String(score);
+      placeFood();
+    } else snake.pop();
+    draw();
+  }
+  function draw() {
+    ctx.fillStyle = '#080a12'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ec4899';
+    ctx.fillRect(food.x * cell, food.y * cell, cell - 2, cell - 2);
+    snake.forEach((s, i) => {
+      ctx.fillStyle = i === 0 ? '#2dd4bf' : '#60a5fa';
+      ctx.fillRect(s.x * cell, s.y * cell, cell - 2, cell - 2);
+    });
+    if (!alive) {
+      ctx.fillStyle = 'rgba(0,0,0,.6)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff'; ctx.font = '15px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('Juego terminado', canvas.width / 2, canvas.height / 2 - 8);
+      ctx.fillText('clic en Reiniciar', canvas.width / 2, canvas.height / 2 + 12);
+    }
+  }
+  function onKey(e) {
+    const map = { ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 } };
+    const d = map[e.key];
+    if (!d) return;
+    e.preventDefault();
+    if (d.x === -dir.x && d.y === -dir.y) return;
+    nextDir = d;
+  }
+  canvas.tabIndex = 0;
+  canvas.addEventListener('click', () => canvas.focus());
+  canvas.addEventListener('keydown', onKey);
+  container.querySelector('[data-act="restart"]').addEventListener('click', reset);
+  reset(); draw();
+  if (win.data.snakeInterval) clearInterval(win.data.snakeInterval);
+  win.data.snakeInterval = setInterval(tick, 140);
+}
+
+/* ================= APP: VISOR DE IMÁGENES ================= */
+function renderImageViewer(container, win, opts) {
+  if (win.data.src === undefined) win.data.src = (opts && opts.src) || null;
+  if (win.data.fileName === undefined) win.data.fileName = (opts && opts.fileName) || null;
+  win.data.rotation = win.data.rotation || 0;
+  win.data.zoom = win.data.zoom || 1;
+  container.innerHTML = `
+    <div class="iv-wrap">
+      <div class="app-toolbar">
+        <button data-act="open">🖼️ Abrir imagen…</button>
+        <button data-act="save">💾 Guardar en Imágenes</button>
+        <button data-act="rotate">⟳ Rotar</button>
+        <button data-act="zoom-in">＋</button>
+        <button data-act="zoom-out">－</button>
+        <input type="file" accept="image/*" id="iv-file-${win.id}" style="display:none" />
+      </div>
+      <div class="iv-canvas">
+        ${win.data.src ? `<img id="iv-img-${win.id}" src="${win.data.src}" style="transform:rotate(${win.data.rotation}deg) scale(${win.data.zoom})" />` : `<div class="app-empty">🖼️<br/>Abrí una imagen desde tu computadora para verla acá</div>`}
+      </div>
+    </div>`;
+  const fileInput = container.querySelector(`#iv-file-${win.id}`);
+  container.querySelector('[data-act="open"]').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      win.data.src = reader.result;
+      win.data.fileName = file.name;
+      win.data.rotation = 0; win.data.zoom = 1;
+      renderImageViewer(container, win, {});
+    };
+    reader.readAsDataURL(file);
+  });
+  container.querySelector('[data-act="save"]').addEventListener('click', () => {
+    if (!win.data.src) { notify('Visor de imágenes', 'Primero abrí una imagen'); return; }
+    const name = win.data.fileName || `imagen-${Date.now()}.png`;
+    const dir = '/home/usuario/Imágenes';
+    if (!getNode(joinPath(dir, name))) createFile(dir, name, win.data.src);
+    else writeFile(joinPath(dir, name), win.data.src);
+    notify('Visor de imágenes', `Guardada en ${dir}/${name}`);
+  });
+  container.querySelector('[data-act="rotate"]').addEventListener('click', () => { win.data.rotation = (win.data.rotation + 90) % 360; applyImgTransform(); });
+  container.querySelector('[data-act="zoom-in"]').addEventListener('click', () => { win.data.zoom = Math.min(3, win.data.zoom + 0.2); applyImgTransform(); });
+  container.querySelector('[data-act="zoom-out"]').addEventListener('click', () => { win.data.zoom = Math.max(0.2, win.data.zoom - 0.2); applyImgTransform(); });
+  function applyImgTransform() {
+    const img = container.querySelector(`#iv-img-${win.id}`);
+    if (img) img.style.transform = `rotate(${win.data.rotation}deg) scale(${win.data.zoom})`;
+  }
+}
+
 /* ================= REGISTRO DE APLICACIONES ================= */
 const APPS = {
   'file-explorer': { name: 'Explorador de archivos', icon: ICONS.folder, defaultSize: { w: 760, h: 500 }, singleton: false, pinned: true, render: renderFileExplorer },
@@ -1456,6 +1763,9 @@ const APPS = {
   'code-editor': { name: 'Editor de código', icon: ICONS.puzzle, emoji: '💻', desc: 'Editor de texto simple con números de línea, ideal para HTML, CSS y JS.', defaultSize: { w: 560, h: 420 }, singleton: false, pinned: false, installable: true, render: renderCodeEditor },
   'media-player': { name: 'Reproductor multimedia', icon: ICONS.puzzle, emoji: '🎵', desc: 'Reproductor de demostración con lista de pistas simuladas.', defaultSize: { w: 360, h: 440 }, singleton: false, pinned: false, installable: true, render: renderMediaPlayer },
   'sticky-notes': { name: 'Notas rápidas', icon: ICONS.puzzle, emoji: '🗒️', desc: 'Una nota adhesiva siempre a mano para ideas rápidas.', defaultSize: { w: 300, h: 340 }, singleton: false, pinned: false, installable: true, render: renderStickyNotes },
+  'weather': { name: 'Clima', icon: ICONS.weather, emoji: '⛅', desc: 'Pronóstico real por ciudad usando una API pública, sin necesidad de clave.', defaultSize: { w: 340, h: 460 }, singleton: false, pinned: false, installable: true, render: renderWeather },
+  'snake-game': { name: 'Snake', icon: ICONS.game, emoji: '🐍', desc: 'El clásico juego de la serpiente, jugable con las flechas del teclado.', defaultSize: { w: 400, h: 460 }, singleton: false, pinned: false, installable: true, render: renderSnakeGame },
+  'image-viewer': { name: 'Visor de imágenes', icon: ICONS.picture, emoji: '🖼️', desc: 'Abrí fotos desde tu computadora y probá zoom y rotación.', defaultSize: { w: 520, h: 440 }, singleton: false, pinned: false, installable: true, render: renderImageViewer },
 };
 
 /* ================= EVENTOS ESTÁTICOS (una sola vez) ================= */
@@ -1498,11 +1808,37 @@ function wireStaticEventListeners() {
   document.getElementById('cc-volume').addEventListener('input', (e) => { state.volume = Number(e.target.value); });
   document.getElementById('cc-test-sound').addEventListener('click', playTestBeep);
 
-  document.getElementById('login-back').addEventListener('click', renderLoginUsers);
-  document.getElementById('login-form').addEventListener('submit', (e) => {
+  document.getElementById('login-toggle').addEventListener('click', () => setLoginMode(loginMode === 'login' ? 'register' : 'login'));
+  document.getElementById('login-guest').addEventListener('click', () => {
+    logIn({ id: 'invitado', name: 'Invitado', avatar: '🙂' });
+  });
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const u = USERS.find((x) => x.id === e.target.dataset.userId) || USERS[0];
-    logIn(u);
+    showLoginError('');
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const name = document.getElementById('login-name').value.trim();
+    const submitBtn = document.getElementById('login-submit-btn');
+    if (!window.WebOSFirebase || !window.WebOSFirebase.isConfigured) {
+      showLoginError('Firebase no está configurado. Usá "Continuar como invitado" o completá firebase-config.js.');
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Un momento…';
+    try {
+      let profile;
+      if (loginMode === 'register') {
+        if (!name) throw new Error('Ingresá un nombre para tu cuenta.');
+        profile = await window.WebOSFirebase.registerUser(name, email, password);
+      } else {
+        profile = await window.WebOSFirebase.loginUser(email, password);
+      }
+      logIn({ id: profile.uid, name: profile.name, avatar: profile.avatar || '🙂' });
+    } catch (err) {
+      showLoginError(traduceErrorFirebase(err));
+      submitBtn.disabled = false;
+      setLoginMode(loginMode);
+    }
   });
   document.querySelectorAll('[data-power]').forEach((btn) => btn.addEventListener('click', () => handlePower(btn.dataset.power)));
 
@@ -1528,6 +1864,12 @@ function wireStaticEventListeners() {
     if (!e.target.closest('#control-center') && !e.target.closest('#tray-controls')) document.getElementById('control-center').classList.add('hidden');
   });
   document.addEventListener('keydown', (e) => {
+    if (!document.getElementById('bios-screen').classList.contains('hidden')) {
+      if (!document.getElementById('bios-setup').classList.contains('hidden')) { handleBiosSetupKey(e); return; }
+      if (e.key === 'Delete') { biosEnterSetupRequested = true; biosSkip = true; }
+      else { biosSkip = true; }
+      return;
+    }
     if (!document.getElementById('lock-screen').classList.contains('hidden')) { goToLogin(); return; }
     if (document.getElementById('desktop').classList.contains('hidden')) return;
     if (e.key === 'Escape') {
@@ -1554,4 +1896,4 @@ initAuroraCanvases();
 wireStaticEventListeners();
 tickClock();
 setInterval(tickClock, 5000);
-runBoot();
+runBios();
