@@ -125,32 +125,24 @@ canvas.bg-canvas-el, #boot-canvas, #lock-canvas, #login-canvas, #bg-canvas{
 @keyframes hint-fade{ 0%,100%{ opacity:.5; } 50%{ opacity:1; } }
 
 /* ============ LOGIN ============ */
-.login-content{ position:relative; z-index:1; width:min(90vw,380px); display:flex; flex-direction:column; align-items:center; gap:18px; }
-.login-users{ display:flex; gap:22px; flex-wrap:wrap; justify-content:center; }
-.login-user-tile{
-  display:flex; flex-direction:column; align-items:center; gap:10px;
-  background:none; border:none; cursor:pointer; padding:14px 18px; border-radius:var(--radius);
-  color:var(--text-primary); transition:background .15s ease, transform .15s ease;
-}
-.login-user-tile:hover{ background:var(--panel); transform:translateY(-2px); }
-.login-user-tile .avatar{
-  width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-  font-size:1.8rem; background:linear-gradient(145deg, var(--accent), var(--accent-2)); box-shadow:0 6px 24px -6px color-mix(in srgb, var(--accent) 60%, transparent);
-}
-.login-form{ width:100%; display:flex; flex-direction:column; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--border-glass); backdrop-filter:blur(20px); border-radius:var(--radius-lg); padding:28px 26px; }
+.login-content{ position:relative; z-index:1; width:min(90vw,380px); display:flex; flex-direction:column; align-items:center; gap:14px; }
 .login-avatar{ width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; background:linear-gradient(145deg, var(--accent), var(--accent-2)); }
-.login-name{ font-family:var(--font-display); font-weight:600; font-size:1.1rem; }
+.login-heading{ font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:0; }
+.login-form{ width:100%; display:flex; flex-direction:column; align-items:stretch; gap:12px; background:var(--panel); border:1px solid var(--border-glass); backdrop-filter:blur(20px); border-radius:var(--radius-lg); padding:26px 26px 22px; }
 .login-input{
   width:100%; padding:12px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-glass-strong);
-  background:rgba(0,0,0,.2); color:var(--text-primary); font-size:.95rem;
+  background:rgba(0,0,0,.2); color:var(--text-primary); font-size:.9rem;
 }
 html[data-theme="light"] .login-input{ background:rgba(255,255,255,.6); }
+.login-error{ font-size:.76rem; color:var(--danger); background:rgba(248,113,113,.12); border:1px solid rgba(248,113,113,.35); border-radius:var(--radius-sm); padding:8px 10px; }
 .login-submit{
   width:100%; padding:12px; border-radius:var(--radius-sm); border:none; cursor:pointer;
   background:linear-gradient(90deg, var(--accent), var(--accent-2)); color:#05060f; font-weight:600;
 }
-.login-back{ background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:.82rem; }
-.login-note{ font-size:.7rem; color:var(--text-dim); text-align:center; margin:0; }
+.login-submit:disabled{ opacity:.7; cursor:default; }
+.login-toggle{ background:none; border:none; color:var(--accent); cursor:pointer; font-size:.78rem; }
+.login-guest{ background:rgba(255,255,255,.06); border:1px solid var(--border-glass-strong); color:var(--text-primary); border-radius:var(--radius-sm); padding:9px; cursor:pointer; font-size:.8rem; }
+.login-note{ font-size:.68rem; color:var(--text-dim); text-align:center; margin:2px 0 0; }
 .login-power{ position:absolute; bottom:28px; right:32px; display:flex; gap:10px; z-index:2; }
 .login-power button{
   width:42px; height:42px; border-radius:50%; border:1px solid var(--border-glass-strong); background:var(--panel);
@@ -162,8 +154,12 @@ html[data-theme="light"] .login-input{ background:rgba(255,255,255,.6); }
 
 /* ============ DESKTOP ============ */
 #desktop{ display:block; }
-.wallpaper-overlay{ position:absolute; inset:0; z-index:0; pointer-events:none; }
-.dim-overlay{ position:absolute; inset:0; z-index:5; background:#000; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+.dim-overlay{ position:absolute; inset:0; z-index:70; background:#000; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+
+/* Fondos de pantalla: cambian el tinte del degradé detrás de la aurora animada */
+html[data-wallpaper="aurora-2"]{ --nebula:#2c1656; }
+html[data-wallpaper="aurora-3"]{ --nebula:#0d2c2c; }
+html[data-wallpaper="solid-1"]{ --nebula:#191b2c; }
 
 .desktop-icons{
   position:absolute; top:14px; left:14px; z-index:1;
@@ -460,6 +456,58 @@ html[data-theme="light"] .term-wrap{ background:#0e1020; color:#dfe4ff; }
 .code-lines{ width:38px; flex:0 0 auto; text-align:right; padding:14px 8px 14px 0; color:var(--text-dim); background:rgba(0,0,0,.15); user-select:none; overflow:hidden; }
 .code-area{ flex:1; border:none; resize:none; background:transparent; color:var(--text-primary); padding:14px; line-height:1.5; }
 .code-area:focus{ outline:none; }
+
+/* --- Clima --- */
+.wx-wrap{ display:flex; flex-direction:column; height:100%; }
+.wx-input{ flex:1; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-glass-strong); background:rgba(255,255,255,.05); color:var(--text-primary); font-size:.8rem; }
+.wx-body{ flex:1; overflow-y:auto; padding:18px; }
+.wx-current{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:2px; padding-bottom:16px; }
+.wx-icon{ font-size:3rem; }
+.wx-temp{ font-family:var(--font-display); font-size:2.4rem; font-weight:600; }
+.wx-desc{ color:var(--text-muted); font-size:.85rem; }
+.wx-place{ font-size:.78rem; margin-top:6px; }
+.wx-sub{ font-size:.7rem; color:var(--text-dim); }
+.wx-days{ display:flex; justify-content:space-between; gap:6px; border-top:1px solid var(--border-glass); padding-top:14px; }
+.wx-day{ flex:1; text-align:center; font-size:.7rem; color:var(--text-muted); display:flex; flex-direction:column; gap:4px; }
+.wx-day div:nth-child(2){ font-size:1.1rem; }
+
+/* --- Snake --- */
+.snake-wrap{ display:flex; flex-direction:column; align-items:center; gap:10px; padding:14px; height:100%; }
+.snake-hud{ width:100%; display:flex; justify-content:space-between; align-items:center; font-size:.82rem; }
+.snake-hud button{ border:none; background:rgba(255,255,255,.08); color:var(--text-primary); padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer; font-size:.75rem; }
+.snake-wrap canvas{ border-radius:var(--radius-sm); outline:none; border:1px solid var(--border-glass); }
+.snake-hint{ font-size:.68rem; color:var(--text-dim); }
+
+/* --- Visor de imágenes --- */
+.iv-wrap{ display:flex; flex-direction:column; height:100%; }
+.iv-canvas{ flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; background:rgba(0,0,0,.15); }
+.iv-canvas img{ max-width:100%; max-height:100%; transition:transform .2s ease; }
+
+/* ============ MODAL GENÉRICO ============ */
+.modal-overlay{ position:fixed; inset:0; z-index:80; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; }
+.modal-box{ width:min(90vw,320px); background:var(--panel-solid); border:1px solid var(--border-glass); border-radius:var(--radius-lg); box-shadow:var(--shadow-window); padding:20px; }
+.modal-title{ font-size:.88rem; font-weight:600; margin-bottom:12px; }
+.modal-input{ width:100%; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-glass-strong); background:rgba(255,255,255,.05); color:var(--text-primary); font-size:.85rem; }
+.modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+.modal-actions button{ border:none; padding:8px 14px; border-radius:var(--radius-sm); cursor:pointer; font-size:.78rem; }
+.modal-cancel{ background:rgba(255,255,255,.06); color:var(--text-muted); }
+.modal-ok{ background:linear-gradient(90deg, var(--accent), var(--accent-2)); color:#05060f; font-weight:600; }
+
+/* ============ BIOS / UEFI ============ */
+.bios-screen{ background:#000; color:#33ff66; font-family:var(--font-mono); align-items:stretch; justify-content:flex-start; }
+.bios-screen::before{
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:2;
+  background:repeating-linear-gradient(rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.25) 3px);
+  mix-blend-mode:multiply;
+}
+.bios-post{ padding:40px 48px; }
+.bios-post pre{ white-space:pre-wrap; font-size:.92rem; line-height:1.6; margin:0; text-shadow:0 0 6px rgba(51,255,102,.5); }
+.bios-hint{ margin-top:18px; font-size:.8rem; opacity:.8; animation:hint-fade 1.6s ease-in-out infinite; }
+.bios-setup{ padding:40px 48px; }
+.bios-setup-title{ font-size:1.05rem; font-weight:600; border-bottom:1px solid #145026; padding-bottom:12px; margin-bottom:10px; }
+.bios-row{ display:flex; justify-content:space-between; padding:9px 10px; font-size:.85rem; }
+.bios-row.sel{ background:#0d3319; color:#aaffcc; }
+.bios-setup-footer{ margin-top:20px; font-size:.75rem; opacity:.75; border-top:1px solid #145026; padding-top:10px; }
 
 /* ============================================================
    RESPONSIVE
