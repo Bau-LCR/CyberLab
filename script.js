@@ -1,8 +1,13 @@
 'use strict';
 /* ============================================================
    WebOS — script.js
-   Sistema operativo simulado, 100% cliente (sin backend).
-   Proyecto educativo — no implementa seguridad real.
+   Sistema operativo simulado, corre en el cliente.
+   Ahora con cuentas reales (Firebase Authentication) y guardado
+   automático del sistema (Firestore): cada archivo, carpeta,
+   preferencia de apariencia y app instalada que un usuario
+   registrado modifique se guarda solo y se restaura la próxima
+   vez que inicia sesión. Los invitados no guardan nada.
+   Proyecto educativo.
    ============================================================ */
 
 /* ================= ICONOGRAFÍA (SVG en línea) ================= */
@@ -74,6 +79,8 @@ const BOOT_LOGS = [
   'Preparando sesión de usuario…',
 ];
 
+const DEFAULT_INSTALLED_APPS = ['file-explorer', 'notepad', 'calculator', 'terminal', 'calendar', 'monitor', 'store', 'settings'];
+
 /* ================= ESTADO GLOBAL ================= */
 const state = {
   theme: 'dark',
@@ -90,7 +97,7 @@ const state = {
   nextWinId: 1,
   activeWindowId: null,
   notifications: [],
-  installedApps: new Set(['file-explorer', 'notepad', 'calculator', 'terminal', 'calendar', 'monitor', 'store', 'settings']),
+  installedApps: new Set(DEFAULT_INSTALLED_APPS),
   processes: [],
   events: {},
 };
@@ -134,33 +141,40 @@ function askInput(title, defaultValue, onConfirm) {
 function makeFolder() { return { type: 'folder', created: Date.now(), children: {} }; }
 function makeFile(content = '') { return { type: 'file', created: Date.now(), modified: Date.now(), content }; }
 
-let fsRoot = makeFolder();
-fsRoot.children = {
-  home: Object.assign(makeFolder(), {
-    children: {
-      usuario: Object.assign(makeFolder(), {
-        children: {
-          'Documentos': Object.assign(makeFolder(), {
-            children: {
-              'bienvenida.txt': makeFile(
-                'Bienvenido a WebOS.\n\nEste es un sistema operativo simulado que corre completamente en tu navegador.\nProbá explorar carpetas, escribir notas, abrir la terminal o revisar el monitor del sistema.\n\nProyecto con fines educativos — no incluye autenticación ni almacenamiento real.'
-              ),
-            },
-          }),
-          'Descargas': makeFolder(),
-          'Imágenes': makeFolder(),
-          'Música': makeFolder(),
-          'Videos': makeFolder(),
-        },
-      }),
-    },
-  }),
-  system: makeFolder(),
-  applications: makeFolder(),
-  temp: makeFolder(),
-  'recycle-bin': makeFolder(),
-  config: makeFolder(),
-};
+// Construye un sistema de archivos "de fábrica". Se usa al arrancar y cada
+// vez que alguien inicia sesión, para no mezclar los archivos de una cuenta
+// con los de otra en la misma pestaña del navegador.
+function createDefaultFsRoot() {
+  const root = makeFolder();
+  root.children = {
+    home: Object.assign(makeFolder(), {
+      children: {
+        usuario: Object.assign(makeFolder(), {
+          children: {
+            'Documentos': Object.assign(makeFolder(), {
+              children: {
+                'bienvenida.txt': makeFile(
+                  'Bienvenido a WebOS.\n\nEste es un sistema operativo simulado que corre completamente en tu navegador.\nProbá explorar carpetas, escribir notas, abrir la terminal o revisar el monitor del sistema.\n\nCreá una cuenta desde la pantalla de inicio de sesión: tus archivos y tu configuración se guardan solos y te van a estar esperando la próxima vez que entres desde cualquier dispositivo.\n\nProyecto con fines educativos.'
+                ),
+              },
+            }),
+            'Descargas': makeFolder(),
+            'Imágenes': makeFolder(),
+            'Música': makeFolder(),
+            'Videos': makeFolder(),
+          },
+        }),
+      },
+    }),
+    system: makeFolder(),
+    applications: makeFolder(),
+    temp: makeFolder(),
+    'recycle-bin': makeFolder(),
+    config: makeFolder(),
+  };
+  return root;
+}
+let fsRoot = createDefaultFsRoot();
 
 function splitPath(path) { return String(path).split('/').filter(Boolean); }
 function getNode(path) {
@@ -209,12 +223,14 @@ function createFolder(path, name) {
   const node = getNode(path);
   if (!node || node.type !== 'folder' || node.children[name]) return false;
   node.children[name] = makeFolder();
+  scheduleSave();
   return true;
 }
 function createFile(path, name, content = '') {
   const node = getNode(path);
   if (!node || node.type !== 'folder' || node.children[name]) return false;
   node.children[name] = makeFile(content);
+  scheduleSave();
   return true;
 }
 function deleteNode(path, permanent = false) {
@@ -232,6 +248,7 @@ function deleteNode(path, permanent = false) {
     while (bin.children[trashName]) trashName = `${name} (${i++})`;
     bin.children[trashName] = node;
   }
+  scheduleSave();
   return true;
 }
 function renameNode(path, newName) {
@@ -241,6 +258,7 @@ function renameNode(path, newName) {
   if (!parent || parent.children[newName]) return false;
   parent.children[newName] = parent.children[name];
   delete parent.children[name];
+  scheduleSave();
   return true;
 }
 function writeFile(path, content) {
@@ -248,6 +266,7 @@ function writeFile(path, content) {
   if (!node || node.type !== 'file') return false;
   node.content = content;
   node.modified = Date.now();
+  scheduleSave();
   return true;
 }
 function fileGlyph(name) {
@@ -256,6 +275,53 @@ function fileGlyph(name) {
   if (/\.(mp3|wav)$/i.test(name)) return '🎵';
   if (/\.(mp4|mov)$/i.test(name)) return '🎬';
   return '📄';
+}
+
+/* ================= PERSISTENCIA EN LA NUBE (FIREBASE) =================
+   Cada cuenta registrada guarda su propio sistema de archivos (fsRoot),
+   apariencia (tema/acento/fondo), apps instaladas y recordatorios del
+   calendario. El guardado se dispara solo (con un pequeño retraso, para
+   no escribir en Firestore en cada tecla) cada vez que algo cambia, y se
+   vuelve a cargar automáticamente al iniciar sesión. Los invitados no
+   tienen cuenta, así que su sesión no se guarda en ningún lado. */
+let saveTimer = null;
+function isCloudUser() {
+  return !!(state.currentUser && state.currentUser.id && state.currentUser.id !== 'invitado');
+}
+function serializeState() {
+  return {
+    fs: fsRoot,
+    theme: state.theme,
+    accent: state.accent,
+    wallpaper: state.wallpaper,
+    installedApps: Array.from(state.installedApps),
+    events: state.events,
+  };
+}
+function applyState(data) {
+  if (!data) return;
+  if (data.fs) fsRoot = data.fs;
+  if (data.theme) setTheme(data.theme);
+  if (data.accent) setAccent(data.accent);
+  if (data.wallpaper) setWallpaper(data.wallpaper);
+  if (Array.isArray(data.installedApps)) state.installedApps = new Set(data.installedApps);
+  if (data.events) state.events = data.events;
+}
+function scheduleSave() {
+  if (!isCloudUser() || !window.WebOSFirebase || !window.WebOSFirebase.isConfigured) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    window.WebOSFirebase.saveUserState(state.currentUser.id, serializeState());
+  }, 1200);
+}
+function flushSave() {
+  if (!saveTimer) return;
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  if (isCloudUser() && window.WebOSFirebase && window.WebOSFirebase.isConfigured) {
+    window.WebOSFirebase.saveUserState(state.currentUser.id, serializeState());
+  }
 }
 
 /* ================= NOTIFICACIONES Y TOASTS ================= */
@@ -827,7 +893,7 @@ function showLoginError(msg) {
 function updateFirebaseNote() {
   const note = document.getElementById('login-fb-note');
   if (window.WebOSFirebase && window.WebOSFirebase.isConfigured) {
-    note.textContent = 'Tu cuenta se guarda de forma segura con Firebase Authentication.';
+    note.textContent = 'Tu cuenta se guarda de forma segura con Firebase Authentication. Tus cambios se sincronizan solos.';
   } else {
     note.textContent = 'Firebase no está configurado todavía: usá "Continuar como invitado" o completá firebase-config.js.';
   }
@@ -845,8 +911,30 @@ function traduceErrorFirebase(err) {
   };
   return map[code] || (err && err.message) || 'Ocurrió un error inesperado.';
 }
-function logIn(user) {
+async function logIn(user) {
   state.currentUser = user;
+  // Cerramos cualquier ventana que hubiera quedado abierta y reiniciamos el
+  // estado local a los valores por defecto ANTES de intentar cargar los
+  // datos guardados de esta cuenta, para no mezclar información entre
+  // distintos usuarios que inicien sesión en la misma pestaña.
+  [...state.windows].forEach((w) => closeWindow(w.id));
+  fsRoot = createDefaultFsRoot();
+  setTheme('dark');
+  setAccent('teal');
+  setWallpaper('aurora-1');
+  state.installedApps = new Set(DEFAULT_INSTALLED_APPS);
+  state.events = {};
+
+  if (isCloudUser() && window.WebOSFirebase && window.WebOSFirebase.isConfigured) {
+    try {
+      const saved = await window.WebOSFirebase.loadUserState(user.id);
+      if (saved) applyState(saved);
+    } catch (err) {
+      console.error('WebOS: no se pudo cargar tu información guardada.', err);
+      notify('WebOS', 'No se pudo cargar tu información guardada. Se abrió un sistema nuevo.');
+    }
+  }
+
   showScreen('desktop');
   renderDesktopIcons();
   renderStartMenu();
@@ -864,8 +952,10 @@ function goToShutdown() {
 }
 function handlePower(action) {
   closeStartMenu();
+  flushSave();
   if (action === 'lock') showScreen('lock-screen');
   else if (action === 'logout') {
+    [...state.windows].forEach((w) => closeWindow(w.id));
     state.currentUser = null;
     if (window.WebOSFirebase) window.WebOSFirebase.logoutUser();
     goToLogin();
@@ -1218,6 +1308,7 @@ function runTermCommand(win, raw) {
       const parentNode = getNode(destParent);
       if (!parentNode) { print('cp: destino inválido'); break; }
       parentNode.children[destName] = JSON.parse(JSON.stringify(src));
+      scheduleSave();
       break;
     }
     case 'mv': {
@@ -1233,6 +1324,7 @@ function runTermCommand(win, raw) {
       if (!parentNode) { print('mv: destino inválido'); break; }
       parentNode.children[destName] = src;
       delete getNode(getParentPath(srcPath)).children[baseName(srcPath)];
+      scheduleSave();
       break;
     }
     case 'tree': {
@@ -1357,6 +1449,7 @@ function renderCalendar(container, win) {
       const v = input.value.trim();
       if (v) { state.events[win.data.selectedDate] = v; notify('Calendario', 'Recordatorio guardado'); }
       else delete state.events[win.data.selectedDate];
+      scheduleSave();
       renderCalendar(container, win);
     }
   });
@@ -1442,13 +1535,14 @@ function renderSettings(container, win) {
     body.querySelector('#theme-toggle').addEventListener('click', (e) => {
       setTheme(state.theme === 'dark' ? 'light' : 'dark');
       e.currentTarget.dataset.on = String(state.theme === 'dark');
+      scheduleSave();
     });
     const accentRow = body.querySelector('#accent-row');
     [['teal', '#2dd4bf'], ['violet', '#8b5cf6'], ['pink', '#ec4899'], ['blue', '#60a5fa']].forEach(([id, color]) => {
       const s = document.createElement('button');
       s.className = 'swatch' + (state.accent === id ? ' active' : '');
       s.style.background = color;
-      s.addEventListener('click', () => { setAccent(id); renderSettings(container, win); });
+      s.addEventListener('click', () => { setAccent(id); scheduleSave(); renderSettings(container, win); });
       accentRow.appendChild(s);
     });
     const wpRow = body.querySelector('#wallpaper-row');
@@ -1457,7 +1551,7 @@ function renderSettings(container, win) {
       s.className = 'wallpaper-swatch' + (state.wallpaper === wp.id ? ' active' : '');
       s.style.background = wp.css;
       s.title = wp.label;
-      s.addEventListener('click', () => { setWallpaper(wp.id); renderSettings(container, win); });
+      s.addEventListener('click', () => { setWallpaper(wp.id); scheduleSave(); renderSettings(container, win); });
       wpRow.appendChild(s);
     });
   } else if (win.data.section === 'privacy') {
@@ -1495,6 +1589,7 @@ function renderStore(container, win) {
     card.querySelector('button').addEventListener('click', () => {
       if (state.installedApps.has(id)) { state.installedApps.delete(id); notify('Tienda de aplicaciones', `${app.name} desinstalada`); }
       else { state.installedApps.add(id); notify('Tienda de aplicaciones', `${app.name} instalada`); }
+      scheduleSave();
       renderDesktopIcons(); renderStartMenu(); renderStore(container, win);
     });
     grid.appendChild(card);
@@ -1879,6 +1974,12 @@ function wireStaticEventListeners() {
     }
     if (e.altKey && e.key === 'Tab') { e.preventDefault(); cycleWindows(); }
   });
+
+  // Si Firebase todavía no había terminado de inicializarse cuando se mostró
+  // la pantalla de inicio de sesión, actualizamos el aviso apenas esté listo.
+  window.addEventListener('webos-firebase-ready', () => {
+    if (!document.getElementById('login-screen').classList.contains('hidden')) updateFirebaseNote();
+  });
 }
 
 /* ================= PROCESOS EN SEGUNDO PLANO ================= */
@@ -1894,6 +1995,8 @@ setInterval(() => {
 seedProcesses();
 initAuroraCanvases();
 wireStaticEventListeners();
+// Guarda cualquier cambio pendiente si el usuario cierra o recarga la pestaña.
+window.addEventListener('beforeunload', flushSave);
 tickClock();
 setInterval(tickClock, 5000);
 runBios();
