@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark" data-accent="teal">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>WebOS · Sistema operativo en el navegador</title>
+<meta name="description" content="WebOS — un sistema operativo simulado que corre enteramente en el navegador. Proyecto educativo." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><circle cx=%2212%22 cy=%2212%22 r=%2210%22 fill=%22%232dd4bf%22/></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ============ BOOT SCREEN ============ -->
+<section id="boot-screen" class="screen">
+  <canvas id="boot-canvas"></canvas>
+  <div class="boot-content">
+    <div class="boot-logo" aria-hidden="true">
+      <div class="boot-orb"></div>
+      <span class="boot-ring"></span>
+    </div>
+    <h1 class="boot-title">WebOS</h1>
+    <div class="boot-progress">
+      <div class="boot-progress-fill" id="boot-progress-fill"></div>
+    </div>
+    <div class="boot-log" id="boot-log"></div>
+  </div>
+</section>
+
+<!-- ============ LOCK SCREEN ============ -->
+<section id="lock-screen" class="screen hidden">
+  <canvas id="lock-canvas"></canvas>
+  <div class="lock-content">
+    <div class="lock-clock" id="lock-clock">00:00</div>
+    <div class="lock-date" id="lock-date">—</div>
+    <p class="lock-hint">Pulsa una tecla, clic o desliza hacia arriba</p>
+  </div>
+</section>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<section id="login-screen" class="screen hidden">
+  <canvas id="login-canvas"></canvas>
+  <div class="login-content">
+    <div class="login-users" id="login-users"></div>
+    <form class="login-form hidden" id="login-form" autocomplete="off">
+      <div class="login-avatar" id="login-avatar">🙂</div>
+      <div class="login-name" id="login-name">Usuario</div>
+      <input type="password" id="login-password" class="login-input" placeholder="Contraseña (cualquiera)" />
+      <button type="submit" class="login-submit">Iniciar sesión →</button>
+      <button type="button" class="login-back" id="login-back">← Cambiar de usuario</button>
+      <p class="login-note">Demo educativa: cualquier contraseña es válida. No hay autenticación real.</p>
+    </form>
+  </div>
+  <div class="login-power" id="login-power">
+    <button data-power="restart" title="Reiniciar">⟳</button>
+    <button data-power="shutdown" title="Apagar">⏻</button>
+  </div>
+</section>
+
+<!-- ============ SHUTDOWN SCREEN ============ -->
+<section id="shutdown-screen" class="screen hidden">
+  <p id="shutdown-text">Apagando WebOS…</p>
+</section>
+
+<!-- ============ DESKTOP ============ -->
+<section id="desktop" class="screen hidden">
+  <canvas id="bg-canvas"></canvas>
+  <div class="wallpaper-overlay" id="wallpaper-overlay"></div>
+  <div class="dim-overlay" id="dim-overlay"></div>
+
+  <div id="desktop-icons" class="desktop-icons"></div>
+  <div id="windows-layer" class="windows-layer"></div>
+
+  <!-- Toasts -->
+  <div id="toast-layer" class="toast-layer"></div>
+
+  <!-- Context menu (generic) -->
+  <div id="context-menu" class="context-menu hidden"></div>
+
+  <!-- Start menu -->
+  <div id="start-menu" class="start-menu hidden">
+    <div class="start-search-row">
+      <input type="text" id="start-search" placeholder="Buscar aplicaciones, archivos y configuración…" />
+    </div>
+    <div class="start-section-label">Fijados</div>
+    <div class="start-pinned" id="start-pinned"></div>
+    <div class="start-section-label">Todas las aplicaciones</div>
+    <div class="start-all" id="start-all"></div>
+    <div class="start-footer">
+      <div class="start-user" id="start-user">🙂 Usuario</div>
+      <div class="start-power-buttons">
+        <button data-power="lock" title="Bloquear">🔒</button>
+        <button data-power="logout" title="Cerrar sesión">↪</button>
+        <button data-power="restart" title="Reiniciar">⟳</button>
+        <button data-power="shutdown" title="Apagar">⏻</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification center -->
+  <aside id="notification-panel" class="notification-panel hidden">
+    <div class="panel-header">
+      <span>Notificaciones</span>
+      <button id="clear-notifications">Borrar todas</button>
+    </div>
+    <div id="notification-list" class="notification-list"></div>
+  </aside>
+
+  <!-- Control center -->
+  <aside id="control-center" class="control-center hidden">
+    <div class="cc-grid">
+      <button class="cc-toggle" id="cc-wifi" data-on="true">
+        <span class="cc-icon">📶</span><span>Wi-Fi</span>
+      </button>
+      <button class="cc-toggle" id="cc-bt" data-on="false">
+        <span class="cc-icon">🔷</span><span>Bluetooth</span>
+      </button>
+      <button class="cc-toggle" id="cc-dnd" data-on="false">
+        <span class="cc-icon">🌙</span><span>No molestar</span>
+      </button>
+      <button class="cc-toggle" id="cc-airplane" data-on="false">
+        <span class="cc-icon">✈️</span><span>Modo avión</span>
+      </button>
+    </div>
+    <div class="cc-slider-row">
+      <span>☀️</span>
+      <input type="range" id="cc-brightness" min="30" max="100" value="100" />
+    </div>
+    <div class="cc-slider-row">
+      <span>🔊</span>
+      <input type="range" id="cc-volume" min="0" max="100" value="60" />
+      <button id="cc-test-sound" title="Probar sonido">▶</button>
+    </div>
+    <div class="cc-battery">🔋 Batería simulada: <span id="cc-battery-level">87%</span></div>
+  </aside>
+
+  <!-- Taskbar -->
+  <footer id="taskbar" class="taskbar">
+    <button id="start-button" class="taskbar-btn start-button" title="Inicio">
+      <span class="start-glyph"></span>
+    </button>
+    <div id="taskbar-search" class="taskbar-search">🔍 Buscar</div>
+    <div id="taskbar-apps" class="taskbar-apps"></div>
+    <div class="taskbar-tray">
+      <button id="tray-controls" class="tray-cluster" title="Centro de control">
+        <span>📶</span><span>🔊</span><span id="tray-battery">🔋</span>
+      </button>
+      <button id="tray-notifications" class="tray-btn" title="Notificaciones">
+        🔔<span id="notif-badge" class="notif-badge hidden">0</span>
+      </button>
+      <button id="tray-clock" class="tray-clock" title="Calendario">
+        <span id="tray-time">00:00</span>
+        <span id="tray-date">—/—</span>
+      </button>
+    </div>
+  </footer>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
