@@ -681,6 +681,24 @@ body.theme-light .wallpaper-overlay{background:rgba(255,255,255,.04);}
   .notification-center,.control-center{width:92vw;right:4vw;}
   .desktop-icon{width:76px;}
   .tb-search-label{display:none;}
+  .taskbar{left:0;right:0;bottom:6px;transform:none;width:100vw;padding:0 6px;}
+  .taskbar-inner{max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;}
+  .taskbar-inner::-webkit-scrollbar{display:none;}
+  .tb-app,.tb-btn{flex:none;}
+  .start-pinned-grid{grid-template-columns:repeat(4,1fr);}
+  .win{min-width:260px;min-height:200px;}
+  .win-resize-handle{display:none;}
+}
+@media (max-width:480px){
+  .lock-clock{font-size:64px;}
+  .signin-input{width:200px;}
+  .cc-panels-row{grid-template-columns:1fr;}
+  .settings-root{flex-direction:column;}
+  .settings-nav{width:100%;height:auto;max-height:130px;display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:4px;border-right:none;border-bottom:1px solid var(--border-soft);}
+  .settings-nav-item{flex:none;white-space:nowrap;}
+  .settings-search{display:none;}
+  .fe-sidebar{width:120px;}
+  .contacts-list,.mail-list{width:150px;}
 }
 @media (min-width:2400px){
   body{font-size:15px;}
