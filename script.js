@@ -813,13 +813,17 @@ const WindowManager = (()=>{
 
   function nextZ(){ OS.zCounter++; return OS.zCounter; }
 
+  function isSmallScreen(){ return window.innerWidth < 760 || window.innerHeight < 560; }
+
   function createWindow(opts){
     const id = "win"+(OS.nextWinId++);
-    const width = opts.width || 760;
-    const height = opts.height || 520;
+    const maxW = Math.max(300, window.innerWidth-16);
+    const maxH = Math.max(220, window.innerHeight-16);
+    const width = Math.min(opts.width || 760, maxW);
+    const height = Math.min(opts.height || 520, maxH);
     const cascadeOffset = (OS.windowOrder.length % 8) * 26;
-    const x = opts.x!==undefined ? opts.x : clamp(120+cascadeOffset, 20, window.innerWidth-width-20);
-    const y = opts.y!==undefined ? opts.y : clamp(70+cascadeOffset, 20, window.innerHeight-height-100);
+    const x = opts.x!==undefined ? opts.x : clamp(120+cascadeOffset, 8, window.innerWidth-width-8);
+    const y = opts.y!==undefined ? opts.y : clamp(70+cascadeOffset, 8, window.innerHeight-height-90);
 
     const winState = {
       id, appId:opts.appId, title:opts.title||"Aplicación", icon:opts.icon||"🗔",
@@ -871,6 +875,9 @@ const WindowManager = (()=>{
     SoundEngine.open();
     Taskbar.syncRunning();
     registerRecentApp(opts.appId, opts.title, opts.icon);
+    if(isSmallScreen() && winState.maximizable){
+      setTimeout(()=>toggleMaximize(id,true), 10);
+    }
     return winState;
   }
 
@@ -1242,6 +1249,9 @@ const StartMenu = (()=>{
     });
     $("#startAllApps").addEventListener("click",()=>{
       Toast.show({title:"Todas las aplicaciones",msg:"Mostrando aplicaciones fijadas y recomendadas. Usa el buscador para encontrar cualquier app instalada.",icon:"🗂️"});
+    });
+    $("#startMoreRecent").addEventListener("click",()=>{
+      Toast.show({title:"Actividad reciente",msg: OS.recentApps.length ? "Mostrando tus "+OS.recentApps.length+" aplicaciones más recientes." : "Aún no has abierto ninguna aplicación.",icon:"🕘"});
     });
     $("#startUserBtn").addEventListener("click",(e)=>{
       e.stopPropagation();
@@ -3644,3 +3654,98 @@ const SETTINGS_PAGES = [
   }
   APP_REGISTRY.camera = {name:"Cámara", icon:"📷", width:520, height:520, resizable:false, render};
 })();
+
+/* ============================================================================
+   22. INICIALIZACIÓN GENERAL DEL SISTEMA
+   Este bloque es el que realmente "enciende" la simulación: conecta todos los
+   módulos anteriores, pinta el escritorio y lanza la secuencia de arranque.
+============================================================================ */
+function wireGlobalTaskbarButtons(){
+  $("#btnAI").addEventListener("click",(e)=>{
+    e.stopPropagation();
+    SoundEngine.click();
+    closeAllFlyouts();
+    AppManager.open("aiAssistant",{});
+  });
+}
+
+function wireGlobalShortcuts(){
+  document.addEventListener("keydown",(e)=>{
+    // Ctrl+Espacio / Ctrl+Escape como alternativa accesible a la tecla Windows
+    if((e.ctrlKey && e.key==="Escape") || (e.ctrlKey && e.code==="Space")){
+      e.preventDefault();
+      StartMenu.toggle();
+    }
+  });
+  // Reanuda el contexto de audio en la primera interacción (política de autoplay de navegadores)
+  const resumeAudio = ()=>{
+    try{ SoundEngine.click.__warmed = true; }catch(err){}
+    document.removeEventListener("pointerdown", resumeAudio);
+    document.removeEventListener("keydown", resumeAudio);
+  };
+  document.addEventListener("pointerdown", resumeAudio, {once:true});
+  document.addEventListener("keydown", resumeAudio, {once:true});
+}
+
+function handleViewportResize(){
+  window.addEventListener("resize", debounce(()=>{
+    // Mantiene las ventanas dentro de los límites visibles tras rotar / redimensionar
+    Object.values(OS.windows).forEach(ws=>{
+      if(ws.maximized){
+        Object.assign(ws.el.style,{width:"100vw",height:"calc(100vh - 8px)"});
+        return;
+      }
+      const maxW = window.innerWidth-16, maxH = window.innerHeight-16;
+      if(ws.width>maxW){ ws.width=maxW; ws.el.style.width=maxW+"px"; }
+      if(ws.height>maxH){ ws.height=maxH; ws.el.style.height=maxH+"px"; }
+      if(ws.x+ws.width>window.innerWidth){ ws.x=Math.max(4,window.innerWidth-ws.width-4); ws.el.style.left=ws.x+"px"; }
+      if(ws.y+ws.height>window.innerHeight){ ws.y=Math.max(4,window.innerHeight-ws.height-4); ws.el.style.top=ws.y+"px"; }
+    });
+  }, 200));
+}
+
+function initSystem(){
+  // 1) Tema y fondo de pantalla por defecto
+  ThemeManager.apply();
+  WallpaperManager.apply(OS.wallpaperId);
+
+  // 2) Escritorio: iconos + selección + menú contextual
+  DesktopIcons.initDesktopSurface();
+  DesktopIcons.render();
+
+  // 3) Pantalla de bloqueo
+  initLockScreen();
+
+  // 4) Barra de tareas
+  Taskbar.initAutohide();
+  Taskbar.initTrayClock();
+  Taskbar.syncRunning();
+  wireGlobalTaskbarButtons();
+
+  // 5) Flyouts / paneles del sistema
+  StartMenu.initEvents();
+  GlobalSearch.initEvents();
+  ControlCenter.initEvents();
+  NotificationCenter.initEvents();
+  WidgetsPanel.initEvents();
+  TaskView.initEvents();
+  AltTabManager.initEvents();
+  PowerModal.initEvents();
+
+  // 6) Efectos, atajos y responsividad
+  attachRipple(document.body);
+  wireGlobalShortcuts();
+  handleViewportResize();
+
+  // 7) Notificación de bienvenida inicial (queda en el historial, no interrumpe el arranque)
+  OS.notifications = [];
+
+  // 8) Arranca la secuencia de arranque visual
+  runBootSequence();
+}
+
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", initSystem);
+} else {
+  initSystem();
+}
